@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "a2a-elastic": {
+      "command": "node",
+      "args": ["dist/index.js"],
+      "env": {
+        "KIBANA_URL": "${KIBANA_URL}",
+        "ELASTIC_API_KEY": "${ELASTIC_API_KEY}"
+      }
+    }
+  }
+}
