@@ -118,5 +118,6 @@ Replace `/path/to/a2a-setup` with the absolute path to where you cloned this rep
 
 ## Future
 
-- Gemini CLI — has native A2A support, connects directly to the same Agent Builder endpoints
-- OpenCode — can use this same MCP server or a similar bridge
+- **Generic A2A MCP bridge** — a second MCP server for talking to arbitrary A2A agents (Gemini CLI instances, other A2A servers) with dynamic agent registration and flexible auth
+- **Gemini CLI** — has native A2A support, connects directly to the same Agent Builder endpoints
+- **OpenCode** — can use this MCP server or similar bridge
