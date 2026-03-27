@@ -1,6 +1,6 @@
 {
   "mcpServers": {
-    "a2a-elastic": {
+    "a2a-bridge": {
       "command": "node",
       "args": ["--env-file=.env", "dist/index.js"]
     }

@@ -1,19 +1,22 @@
 {
-  "name": "a2a-elastic-mcp",
-  "version": "1.0.0",
-  "description": "MCP server bridging Claude Code to Elastic Agent Builder via A2A protocol",
+  "name": "a2a-bridge",
+  "version": "2.0.0",
+  "description": "MCP server bridging AI coding agents to A2A-compliant agents (Elastic Agent Builder, Gemini CLI, and more)",
   "type": "module",
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
-    "start": "node dist/index.js"
+    "start": "node --env-file=.env dist/index.js",
+    "serve": "node --env-file=.env dist/a2a-server.js",
+    "gemini-a2a": "CODER_AGENT_PORT=41965 node node_modules/@google/gemini-cli-a2a-server/dist/a2a-server.mjs"
   },
   "dependencies": {
+    "@google/gemini-cli-a2a-server": "^0.35.2",
     "@modelcontextprotocol/sdk": "^1.12.1",
     "zod": "^3.23.0"
   },
   "devDependencies": {
-    "typescript": "^5.7.0",
-    "@types/node": "^22.0.0"
+    "@types/node": "^22.0.0",
+    "typescript": "^5.7.0"
   }
 }
