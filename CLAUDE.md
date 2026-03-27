@@ -110,9 +110,14 @@ Manual testing via Claude Code:
 - Verify Kibana is reachable: `curl -H "Authorization: ApiKey $ELASTIC_API_KEY" "$KIBANA_URL/api/status"`
 
 **Tool calls failing?**
-- Check `.mcp.json` cwd and args are correct
 - Verify compiled JavaScript exists in `dist/`
 - Check Claude Code console for error messages
+
+**Agent returns "Connection refused" or inference errors?**
+- This is a Kibana connector issue, not an A2A/MCP issue
+- Test the connector in Kibana: Stack Management > Connectors > Test
+- Check inference endpoint: `GET _inference/_all` in Dev Tools
+- The managed `.gp-llm-v2-chat_completion` endpoint only supports streaming — Agent Builder agents need a compatible connector
 
 **A2A endpoint issues?**
 - Use `scripts/discover-a2a.sh` to test endpoints directly

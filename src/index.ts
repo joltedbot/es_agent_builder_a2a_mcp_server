@@ -61,9 +61,11 @@ server.tool(
   "List all available Agent Builder agents in the Elastic cluster",
   {},
   async () => {
-    const data = await kibanaFetch("/api/agent_builder/agents");
-    if (!Array.isArray(data)) {
-      throw new Error("Unexpected response format from agent list endpoint");
+    const raw = await kibanaFetch("/api/agent_builder/agents");
+    const obj = raw as any;
+    const data = Array.isArray(raw) ? raw : Array.isArray(obj?.results) ? obj.results : Array.isArray(obj?.agents) ? obj.agents : null;
+    if (!data) {
+      throw new Error(`Unexpected response format from agent list endpoint: ${JSON.stringify(raw).slice(0, 200)}`);
     }
     const agents = data.map((a: any) => ({
       id: a.id ?? a.agentId,
