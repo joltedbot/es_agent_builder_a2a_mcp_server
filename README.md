@@ -62,17 +62,13 @@ The `.mcp.json` file configures Claude Code to launch the server:
   "mcpServers": {
     "a2a-elastic": {
       "command": "node",
-      "args": ["dist/index.js"],
-      "env": {
-        "KIBANA_URL": "${KIBANA_URL}",
-        "ELASTIC_API_KEY": "${ELASTIC_API_KEY}"
-      }
+      "args": ["--env-file=.env", "dist/index.js"]
     }
   }
 }
 ```
 
-Both variables are read from your environment (set via `.env` or shell profile).
+Credentials are loaded directly from the `.env` file via Node's `--env-file` flag — no shell environment variables needed.
 
 ## Using in Other Projects
 
@@ -81,10 +77,10 @@ Both variables are read from your environment (set via `.env` or shell profile).
 Register the server once and it's available in all Claude Code sessions:
 
 ```bash
-claude mcp add --scope user a2a-elastic node /path/to/a2a-setup/dist/index.js
+claude mcp add --scope user a2a-elastic node -- --env-file=/path/to/a2a-setup/.env /path/to/a2a-setup/dist/index.js
 ```
 
-Then export `KIBANA_URL` and `ELASTIC_API_KEY` in your shell profile (`~/.zshrc` or `~/.zprofile`) so they're always available.
+The `--env-file` flag points to the `.env` file in this project, so credentials are always loaded automatically.
 
 ### Option B: Per-project `.mcp.json`
 
@@ -95,11 +91,7 @@ If the project doesn't have a `.mcp.json`, copy this project's `.mcp.json` into 
   "mcpServers": {
     "a2a-elastic": {
       "command": "node",
-      "args": ["/path/to/a2a-setup/dist/index.js"],
-      "env": {
-        "KIBANA_URL": "${KIBANA_URL}",
-        "ELASTIC_API_KEY": "${ELASTIC_API_KEY}"
-      }
+      "args": ["--env-file=/path/to/a2a-setup/.env", "/path/to/a2a-setup/dist/index.js"]
     }
   }
 }
