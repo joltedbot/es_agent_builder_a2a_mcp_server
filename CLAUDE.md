@@ -1,10 +1,8 @@
 # CLAUDE.md (Project-Specific)
 
-Project: A2A Elastic MCP Server — bridges Claude Code to Elastic Agent Builder agents via A2A protocol v0.3.0.
+Project: A2A Bridge — multi-provider MCP server bridging AI coding agents to A2A-compliant agents (Elastic Agent Builder, Gemini CLI, arbitrary A2A servers).
 
 ## Quick Start
-
-**Build and start the server:**
 
 ```bash
 npm install
@@ -12,63 +10,86 @@ npm run build
 npm start
 ```
 
-**Configure environment (`.env` file in project root):**
+**Configure credentials (`.env` — single source of truth for all secrets):**
 
 ```bash
 KIBANA_URL=https://your-deployment.kb.elastic-cloud.com
 ELASTIC_API_KEY=your-api-key
 ```
 
-Template: `.env.example`. The `.env` file is the single source of truth for credentials (gitignored, 600 perms).
+**Optional multi-provider setup:** Create `agents.json` (see `agents.json.example`). Without it, the server auto-creates an Elastic provider from `.env`.
 
-**Verify the server:**
-
-Open the project in Claude Code. The `.mcp.json` auto-starts the server. Use `/mcp` to verify `a2a-elastic` is listed.
+**Verify:** Open in Claude Code, use `/mcp` to confirm `a2a-bridge` is listed.
 
 ## Project Structure
 
 ```
 src/
-  index.ts          — Main MCP server (3 tools: list_agents, get_agent_card, send_message)
-package.json        — Dependencies, build/start scripts
-tsconfig.json       — TypeScript config
-.mcp.json           — Claude Code MCP server config (auto-start, refs ${KIBANA_URL} and ${ELASTIC_API_KEY})
-.env                — Environment variables (KIBANA_URL, ELASTIC_API_KEY) — gitignored
-.env.example        — Template for .env (committable)
-docs/               — Implementation specs and plans
+  index.ts              — Entry point: loads config, creates providers, registers tools, starts stdio
+  config.ts             — Config loading (agents.json with .env fallback for backward compat)
+  types.ts              — Shared interfaces: AgentInfo, ProviderConfig, AuthConfig
+  providers/
+    provider.ts         — A2AProvider interface
+    elastic.ts          — Elastic/Kibana provider (Kibana-specific endpoints and auth)
+    standard-a2a.ts     — Standard A2A provider (well-known discovery, generic JSON-RPC)
+  tools/
+    list-agents.ts      — list_agents tool (aggregates across all providers)
+    get-agent-card.ts   — get_agent_card tool (routes by compound ID)
+    send-message.ts     — send_message tool (routes by compound ID)
+    resolve-agent.ts    — Compound ID parsing and provider routing
+  util/
+    http.ts             — authedFetch with configurable auth, timeout, error handling
+agents.json.example     — Provider registry template
+.env.example            — Credential template
+.mcp.json               — Claude Code MCP server config
+docs/
+  gemini-cli-setup.md   — Gemini CLI integration guide
+  opencode-setup.md     — OpenCode integration guide
 scripts/
-  discover-a2a.sh   — Shell script to explore A2A endpoints
+  discover-a2a.sh       — Shell script to explore Elastic A2A endpoints
 ```
 
 ## Key Technical Details
 
-### A2A Protocol (v0.3.0)
+### Provider Architecture
 
-- **Agent card endpoint:** `GET /api/agent_builder/a2a/{agentId}.json` — fetch agent capabilities
-- **Task endpoint:** `POST /api/agent_builder/a2a/{agentId}` — send messages, receive responses
-- **JSON-RPC method:** `message/send` (not `tasks/send`)
-- **Message part format:** Uses `kind: "text"` discriminator (not `type: "text"`)
-- **Streaming:** Not supported by Agent Builder
+Two provider types implementing the `A2AProvider` interface:
+
+- **`ElasticProvider`** — Kibana-specific: `/api/agent_builder/agents` for listing, `/api/agent_builder/a2a/{id}` for messaging. Requires `ApiKey` auth + `kbn-xsrf` header.
+- **`StandardA2AProvider`** — Generic A2A: `/.well-known/agent-card.json` for discovery, `POST {baseUrl}` for JSON-RPC messaging. Works with any A2A-compliant agent.
+
+### Agent ID Routing
+
+Tools accept compound IDs: `provider/agentId` (e.g., `elastic/dev_assistant`). Bare IDs auto-resolve to the sole provider when unambiguous. The `list_agents` output includes compound IDs.
+
+### Configuration
+
+- **`agents.json`** — Provider registry. References env var names via `${VAR}` interpolation. Safe to commit (no secrets).
+- **`.env`** — All credentials. Loaded via Node's `--env-file` flag. Gitignored.
+- **Backward compat**: No `agents.json` + `KIBANA_URL`/`ELASTIC_API_KEY` env vars = auto-generated Elastic provider.
 
 ### MCP Tools
 
-1. **list_agents** — GET `/api/agent_builder/agents`, returns array of agents with id, name, description
-2. **get_agent_card** — GET `/api/agent_builder/a2a/{agentId}.json`, returns agent capabilities/skills
-3. **send_message** — POST `/api/agent_builder/a2a/{agentId}` with JSON-RPC payload, returns agent response
+1. **list_agents** — Aggregates agents from all providers. Returns compound IDs with `source` field.
+2. **get_agent_card** — Routes to correct provider via compound ID. Elastic: fetches from Kibana. Standard: fetches `/.well-known/agent-card.json`.
+3. **send_message** — Routes to correct provider. Both use JSON-RPC 2.0 `message/send` with `kind: "text"` parts.
 
 ### Authentication
 
-All requests require:
-- `Authorization: ApiKey {ELASTIC_API_KEY}` header
-- `kbn-xsrf: true` header (Kibana CSRF protection)
+Per-provider auth configured in `agents.json`:
+- `api-key` — `Authorization: ApiKey {value}` (Elastic)
+- `bearer` — `Authorization: Bearer {value}`
+- `header` — Custom static headers
+- `none` — No auth (local agents)
 
 ### Security Hardening
 
-- **Agent ID validation:** Regex `[a-zA-Z0-9_.-]{1,128}` prevents path traversal
-- **HTTPS enforcement:** Rejects non-HTTPS `KIBANA_URL` at startup
-- **Request timeout:** 30s abort on all Kibana API calls
-- **Message length:** Capped at 32KB
-- **Error sanitization:** Internal errors logged to stderr only; MCP clients see generic messages
+- **HTTPS enforcement:** Required for all non-localhost URLs
+- **Agent ID validation:** `[a-zA-Z0-9_.-]{1,128}` per segment (prevents path traversal)
+- **Request timeout:** 30s abort on all requests
+- **Message length:** 32KB cap
+- **Error sanitization:** Internal details to stderr only; MCP clients see generic errors
+- **Credential isolation:** `.env` only — never in `agents.json`, `.mcp.json`, or committed files
 
 ### Kibana Instance
 
@@ -76,16 +97,9 @@ All requests require:
 
 ## Development
 
-**TypeScript compilation:**
-
 ```bash
 npm run build    # Compiles src/ → dist/
-```
-
-**File watching (if needed):**
-
-```bash
-npx tsc --watch
+npx tsc --watch  # File watching
 ```
 
 **Code style:** ESM modules, TypeScript 5.7+, zod for runtime validation.
@@ -93,36 +107,29 @@ npx tsc --watch
 ## Testing
 
 Manual testing via Claude Code:
-- Use `/mcp` to verify server is running
-- Try: "List the available A2A agents"
-- Try: "Get the agent card for [agentId]"
-- Try: "Ask the [agentId] agent to [task]"
-
-## Future Work
-
-- **Gemini CLI** — has native A2A support, connects to same Agent Builder endpoints
-- **OpenCode** — can use this MCP server or similar bridge
+- `/mcp` to verify server is running
+- "List the available A2A agents" — should show compound IDs with source
+- "Get the agent card for elastic/[agentId]"
+- "Ask the elastic/[agentId] agent to [task]"
 
 ## Debugging
 
 **Server not starting?**
-- Check `.env` file exists with `KIBANA_URL` and `ELASTIC_API_KEY`
+- Check `.env` file exists with required vars (or `agents.json` is valid)
 - Verify Kibana is reachable: `curl -H "Authorization: ApiKey $ELASTIC_API_KEY" "$KIBANA_URL/api/status"`
 
 **Tool calls failing?**
-- Verify compiled JavaScript exists in `dist/`
+- Verify `dist/` has compiled JS: `ls dist/**/*.js`
 - Check Claude Code console for error messages
 
-**Agent returns "Connection refused" or inference errors?**
-- This is a Kibana connector issue, not an A2A/MCP issue
-- Test the connector in Kibana: Stack Management > Connectors > Test
-- Check inference endpoint: `GET _inference/_all` in Dev Tools
-- The managed `.gp-llm-v2-chat_completion` endpoint only supports streaming — Agent Builder agents need a compatible connector
+**Provider errors?**
+- "Provider not found" — check `agents.json` provider names match the compound ID prefix
+- "Ambiguous agent ID" — use compound format `provider/agentId`
+- "Environment variable not set" — check `.env` has the var referenced in `agents.json`
 
-**A2A endpoint issues?**
+**Elastic-specific issues?**
 - Use `scripts/discover-a2a.sh` to test endpoints directly
-- Verify agent ID is correct (use `list_agents` tool)
-- Check API key has Agent Builder permissions
+- Test connector in Kibana: Stack Management > Connectors > Test
 
 ## Reference
 

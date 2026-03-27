@@ -1,0 +1,29 @@
+{
+  "providers": [
+    {
+      "type": "elastic",
+      "name": "elastic",
+      "baseUrl": "${KIBANA_URL}",
+      "auth": {
+        "scheme": "api-key",
+        "envVar": "ELASTIC_API_KEY",
+        "headers": { "kbn-xsrf": "true" }
+      }
+    },
+    {
+      "type": "a2a",
+      "name": "gemini-local",
+      "baseUrl": "http://localhost:41965",
+      "auth": { "scheme": "none" }
+    },
+    {
+      "type": "a2a",
+      "name": "my-remote-agent",
+      "baseUrl": "https://agent.example.com",
+      "auth": {
+        "scheme": "bearer",
+        "envVar": "MY_AGENT_TOKEN"
+      }
+    }
+  ]
+}
