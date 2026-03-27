@@ -36,9 +36,13 @@ Agent IDs use compound format: `provider/agentId` (e.g., `elastic/dev_assistant`
 
 ## Quick Start
 
-1. Install and build:
+### Initial Setup (One-Time)
+
+1. Clone and install:
 
 ```bash
+git clone <repo-url>
+cd native-api
 npm install
 npm run build
 ```
@@ -46,19 +50,74 @@ npm run build
 2. Create a `.env` file (sole source of truth for all credentials):
 
 ```bash
-# Required for Elastic provider
+# For Elastic provider
 KIBANA_URL=https://your-deployment.kb.elastic-cloud.com
 ELASTIC_API_KEY=your-api-key
 
-# Optional: tokens for other A2A agents
+# Optional: For Gemini or other A2A servers
 # MY_AGENT_TOKEN=your-token-here
 ```
 
-3. (Optional) Create `agents.json` for multi-provider setup — see [Configuration](#configuration).
+3. (Optional) Create `agents.json` for multi-provider setup:
 
-4. Open the project in Claude Code. The `.mcp.json` auto-starts the server.
+```bash
+cp agents.json.example agents.json
+# Edit agents.json to add your providers
+```
 
-5. Verify with `/mcp` — you should see `a2a-bridge` listed.
+Without `agents.json`, the system auto-creates an Elastic provider from `.env` variables.
+
+### Running Bidirectional A2A (Three Terminals)
+
+Open three terminal windows and run these commands in parallel:
+
+**Terminal 1** — Claude Code A2A Server (receives messages from Gemini):
+
+```bash
+npm run serve
+# Output: "A2A server listening on http://127.0.0.1:3008"
+```
+
+**Terminal 2** — Gemini CLI A2A Server (receives messages from Claude):
+
+```bash
+npm run gemini-a2a
+# Output: "A2A server listening on port 41965"
+```
+
+**Terminal 3** — Claude Code or Gemini CLI for testing:
+
+```bash
+# In Claude Code, use the MCP bridge:
+# List the available A2A agents
+# Ask the gemini-local/default agent to [task]
+
+# Or from Gemini CLI:
+# /agents list
+# /ask claude-code "do something"
+```
+
+### Claude Code Integration
+
+Open the project in Claude Code. The `.mcp.json` auto-starts the MCP bridge:
+
+1. Verify the server: `/mcp` — you should see `a2a-bridge` listed
+2. Try: "List the available A2A agents" → should show agents including `gemini-local/default`
+3. Try: "Ask the gemini-local/default agent to list files in the current directory"
+
+### Gemini CLI Integration
+
+Configure Gemini to discover Claude Code as an A2A agent:
+
+1. Copy the agent config:
+   ```bash
+   mkdir -p ~/.gemini/agents
+   cp examples/gemini-agents/claude-code.md ~/.gemini/agents/
+   ```
+
+2. Verify: `/agents list` in Gemini CLI should show `claude-code`
+
+3. Try: `/ask claude-code "list my open files"`
 
 ## Usage
 

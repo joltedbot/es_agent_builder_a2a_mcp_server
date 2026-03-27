@@ -1,7 +1,11 @@
 import { readFileSync, existsSync } from "fs";
-import { join } from "path";
+import { join, dirname } from "path";
+import { fileURLToPath } from "url";
 import { z } from "zod";
 import type { ProviderConfig } from "./types.js";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const PROJECT_ROOT = join(__dirname, "..");
 
 const SAFE_HEADER_NAME = /^[a-zA-Z0-9\-]+$/;
 const NO_CRLF = /^[^\r\n]+$/;
@@ -63,9 +67,12 @@ function validateAuthEnvVars(config: ProviderConfig): void {
 
 const BLOCKED_HOSTS = new Set([
   "169.254.169.254",     // AWS/GCP IMDS
+  "169.254.170.2",       // AWS ECS task metadata
+  "fd00:ec2::254",       // AWS IPv6 IMDS
   "metadata.google.internal",
   "metadata.internal",
   "100.100.100.200",     // Alibaba IMDS
+  "0.0.0.0",             // Maps to localhost on many systems
 ]);
 
 function validateUrl(baseUrl: string, providerName: string): void {
@@ -88,7 +95,7 @@ function validateUrl(baseUrl: string, providerName: string): void {
 }
 
 export function loadConfig(): ProviderConfig[] {
-  const configPath = join(process.cwd(), "agents.json");
+  const configPath = join(PROJECT_ROOT, "agents.json");
 
   if (existsSync(configPath)) {
     const raw = readFileSync(configPath, "utf-8");

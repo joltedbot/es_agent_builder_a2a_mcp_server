@@ -1,5 +1,6 @@
 ---
 kind: remote
+name: claude-code
 agent_card_url: http://localhost:3008/.well-known/agent-card.json
 ---
 

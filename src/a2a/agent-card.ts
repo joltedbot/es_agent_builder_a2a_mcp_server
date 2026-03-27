@@ -6,6 +6,7 @@ export function getAgentCard() {
     name: "Claude Code Agent",
     description:
       "AI coding assistant powered by Claude Code. Capable of reading, writing, and analyzing code, running shell commands, and performing complex software engineering tasks.",
+    url: `http://${host}:${port}`,
     version: "1.0.0",
     default_input_modes: ["text"],
     default_output_modes: ["text"],

@@ -27,6 +27,7 @@ function sendJson(res: import("http").ServerResponse, status: number, data: unkn
   res.writeHead(status, {
     "Content-Type": "application/json",
     "X-Content-Type-Options": "nosniff",
+    "Cache-Control": "no-store",
   });
   res.end(body);
 }
@@ -77,8 +78,12 @@ const server = createServer(async (req, res) => {
     return;
   }
 
-  // Agent card discovery
+  // Agent card discovery (rate-limited to prevent enumeration)
   if (method === "GET" && (url === "/.well-known/agent-card.json" || url === "/.well-known/agent.json")) {
+    if (isRateLimited()) {
+      sendJson(res, 429, { error: "Rate limited" });
+      return;
+    }
     sendJson(res, 200, getAgentCard());
     return;
   }
@@ -121,7 +126,7 @@ if (!isLocalhost && !AUTH_TOKEN) {
 server.listen(PORT, HOST, () => {
   console.error(`[a2a-server] Claude Code A2A server listening on http://${HOST}:${PORT}`);
   console.error(`[a2a-server] Agent card: http://${HOST}:${PORT}/.well-known/agent-card.json`);
-  if (!AUTH_TOKEN && HOST === "127.0.0.1") {
-    console.error("[a2a-server] No A2A_SERVER_TOKEN set — auth disabled (localhost only)");
+  if (!AUTH_TOKEN) {
+    console.error("[a2a-server] WARNING: No A2A_SERVER_TOKEN set — any local process can invoke Claude Code");
   }
 });

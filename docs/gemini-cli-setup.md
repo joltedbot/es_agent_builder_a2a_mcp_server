@@ -14,14 +14,13 @@ Add to your `.gemini/settings.json` (project or `~/.gemini/settings.json` for gl
   "mcpServers": {
     "a2a-bridge": {
       "command": "node",
-      "args": ["--env-file=/path/to/project/.env", "/path/to/project/dist/index.js"],
-      "cwd": "/path/to/project"
+      "args": ["--env-file=/path/to/native-api/.env", "/path/to/native-api/dist/index.js"]
     }
   }
 }
 ```
 
-Replace `/path/to/project` with the absolute path to this repo's `native-api` directory.
+Replace `/path/to/native-api` with the absolute path to this repo's `native-api` directory. No `cwd` needed — `agents.json` is resolved relative to the script location.
 
 Gemini CLI will auto-discover the `list_agents`, `get_agent_card`, and `send_message` tools.
 
@@ -45,7 +44,17 @@ Note: Native A2A connections require the remote agent to serve a standard agent 
 
 ### Claude Code → Gemini CLI
 
-If Gemini CLI runs as an A2A server (via `@google/gemini-cli-a2a-server`), add it as a standard A2A provider in `agents.json`:
+Start the Gemini A2A server (in a separate terminal):
+
+```bash
+npm run gemini-a2a
+```
+
+> **Note:** `npx @google/gemini-cli-a2a-server` has a known bug where the symlink
+> causes the server to silently exit. The `npm run gemini-a2a` script works around
+> this by invoking the `.mjs` file directly.
+
+Ensure `agents.json` includes Gemini as a standard A2A provider:
 
 ```json
 {
@@ -71,6 +80,7 @@ Create `.gemini/agents/claude-code.md` in your project:
 ```yaml
 ---
 kind: remote
+name: claude-code
 agent_card_url: http://localhost:3008/.well-known/agent-card.json
 ---
 Claude Code Agent — AI coding assistant accessible via A2A.

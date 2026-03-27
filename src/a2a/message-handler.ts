@@ -7,7 +7,7 @@ let activeExecutions = 0;
 
 const MessagePartSchema = z.object({
   kind: z.literal("text"),
-  text: z.string().min(1).max(32768),
+  text: z.string().min(1).max(32768).refine((s) => !s.includes("\0"), "Null bytes not permitted"),
 });
 
 const MessageSchema = z.object({

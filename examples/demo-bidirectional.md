@@ -40,12 +40,16 @@ curl http://localhost:3008/.well-known/agent-card.json
 
 ## Step 2: Start the Gemini CLI A2A Server (for Claude-to-Gemini direction)
 
-In terminal 2, start Gemini CLI's experimental A2A server:
+In terminal 2, start Gemini CLI's A2A server:
 ```bash
-npx @google/gemini-cli-a2a-server
+npm run gemini-a2a
 ```
 
-Note the port it starts on (typically 41965).
+This starts on port 41965 (configured via `CODER_AGENT_PORT`).
+
+> **Note:** `npx @google/gemini-cli-a2a-server` has a known bug where the symlink
+> causes the `isMainModule` check to fail, so the server silently exits.
+> The `npm run gemini-a2a` script works around this by invoking the `.mjs` file directly.
 
 ## Step 3: Configure Gemini CLI to Discover Claude Code
 

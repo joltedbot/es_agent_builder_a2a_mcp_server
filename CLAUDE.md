@@ -6,23 +6,31 @@ Project: A2A Bridge — bidirectional A2A communication for AI coding agents. Tw
 
 ## Quick Start
 
-```bash
-npm install
-npm run build
-npm start        # MCP bridge (outbound)
-npm run serve    # A2A server (inbound) — separate terminal
-```
-
-**Configure credentials (`.env` — single source of truth for all secrets):**
+**One-time setup:**
 
 ```bash
-KIBANA_URL=https://your-deployment.kb.elastic-cloud.com
-ELASTIC_API_KEY=your-api-key
+npm install && npm run build
+# Create .env with KIBANA_URL and ELASTIC_API_KEY
+# (Optional) Copy agents.json.example to agents.json for multi-provider setup
 ```
 
-**Optional multi-provider setup:** Create `agents.json` (see `agents.json.example`). Without it, the server auto-creates an Elastic provider from `.env`.
+**Three-terminal launch (bidirectional A2A):**
 
-**Verify:** Open in Claude Code, use `/mcp` to confirm `a2a-bridge` is listed.
+```bash
+# Terminal 1: Claude Code A2A server (port 3008)
+npm run serve
+
+# Terminal 2: Gemini CLI A2A server (port 41965) — note: runs .mjs directly, not via npx
+npm run gemini-a2a
+
+# Terminal 3: Claude Code or Gemini CLI for testing
+# Claude: use /mcp, then ask agents
+# Gemini: use /agents list, then /ask claude-code "..."
+```
+
+**Claude Code integration:** Open project in Claude Code. `.mcp.json` auto-starts the MCP bridge. Verify with `/mcp`.
+
+**Gemini CLI integration:** Copy `examples/gemini-agents/claude-code.md` to `~/.gemini/agents/` (requires `name: claude-code` field).
 
 ## Project Structure
 
@@ -33,9 +41,9 @@ src/
   config.ts             — Config loading (agents.json with .env fallback)
   types.ts              — Shared interfaces: AgentInfo, ProviderConfig, AuthConfig
   a2a/
-    agent-card.ts       — Agent card definition for inbound server
+    agent-card.ts       — Agent card definition for inbound server (includes `url` field)
     message-handler.ts  — JSON-RPC message/send handler with Zod validation
-    claude-executor.ts  — Claude CLI subprocess wrapper (uses execFile)
+    claude-executor.ts  — Claude CLI subprocess wrapper (uses spawn with stdio isolation)
   providers/
     provider.ts         — A2AProvider interface
     elastic.ts          — Elastic/Kibana provider
@@ -52,7 +60,7 @@ agents.json.example     — Provider registry template
 .mcp.json               — Claude Code MCP server config
 examples/
   gemini-agents/
-    claude-code.md      — Example Gemini agent config for discovering Claude Code
+    claude-code.md      — Example Gemini agent config for discovering Claude Code (requires `name` field)
   demo-bidirectional.md — Full bidirectional demo walkthrough
 docs/
   gemini-cli-setup.md   — Gemini CLI integration guide
@@ -115,6 +123,13 @@ npx tsc --watch  # File watching
 ```
 
 **Code style:** ESM modules, TypeScript 5.7+, zod for runtime validation.
+
+**Key implementation details:**
+- **Subprocess execution:** `spawn` with `stdio: ["ignore", "pipe", "pipe"]` (eliminates stdin warning)
+- **Agent card:** Must include `url` field (required by A2A spec, Gemini CLI crashes without it)
+- **Gemini config:** Requires `name` field in agent YAML (e.g., `name: claude-code`)
+- **Gemini A2A server:** npx wrapper fails silently due to isMainModule check; use `.mjs` file directly via `npm run gemini-a2a`
+- **Config resolution:** `agents.json` resolves from script directory (not `cwd`), so MCP configs don't need `cwd`
 
 ## Testing
 
