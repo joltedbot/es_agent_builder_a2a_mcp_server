@@ -1,13 +1,16 @@
 # CLAUDE.md (Project-Specific)
 
-Project: A2A Bridge — multi-provider MCP server bridging AI coding agents to A2A-compliant agents (Elastic Agent Builder, Gemini CLI, arbitrary A2A servers).
+Project: A2A Bridge — bidirectional A2A communication for AI coding agents. Two companion servers:
+- **a2a-bridge** (MCP stdio) — outbound: Claude Code/Gemini/OpenCode reach remote A2A agents
+- **a2a-server** (HTTP) — inbound: remote A2A agents reach Claude Code
 
 ## Quick Start
 
 ```bash
 npm install
 npm run build
-npm start
+npm start        # MCP bridge (outbound)
+npm run serve    # A2A server (inbound) — separate terminal
 ```
 
 **Configure credentials (`.env` — single source of truth for all secrets):**
@@ -25,15 +28,20 @@ ELASTIC_API_KEY=your-api-key
 
 ```
 src/
-  index.ts              — Entry point: loads config, creates providers, registers tools, starts stdio
-  config.ts             — Config loading (agents.json with .env fallback for backward compat)
+  index.ts              — MCP bridge entry point (outbound: npm start)
+  a2a-server.ts         — A2A HTTP server entry point (inbound: npm run serve)
+  config.ts             — Config loading (agents.json with .env fallback)
   types.ts              — Shared interfaces: AgentInfo, ProviderConfig, AuthConfig
+  a2a/
+    agent-card.ts       — Agent card definition for inbound server
+    message-handler.ts  — JSON-RPC message/send handler with Zod validation
+    claude-executor.ts  — Claude CLI subprocess wrapper (uses execFile)
   providers/
     provider.ts         — A2AProvider interface
-    elastic.ts          — Elastic/Kibana provider (Kibana-specific endpoints and auth)
-    standard-a2a.ts     — Standard A2A provider (well-known discovery, generic JSON-RPC)
+    elastic.ts          — Elastic/Kibana provider
+    standard-a2a.ts     — Standard A2A provider (well-known discovery)
   tools/
-    list-agents.ts      — list_agents tool (aggregates across all providers)
+    list-agents.ts      — list_agents tool (aggregates across providers)
     get-agent-card.ts   — get_agent_card tool (routes by compound ID)
     send-message.ts     — send_message tool (routes by compound ID)
     resolve-agent.ts    — Compound ID parsing and provider routing
@@ -42,6 +50,10 @@ src/
 agents.json.example     — Provider registry template
 .env.example            — Credential template
 .mcp.json               — Claude Code MCP server config
+examples/
+  gemini-agents/
+    claude-code.md      — Example Gemini agent config for discovering Claude Code
+  demo-bidirectional.md — Full bidirectional demo walkthrough
 docs/
   gemini-cli-setup.md   — Gemini CLI integration guide
   opencode-setup.md     — OpenCode integration guide

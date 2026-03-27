@@ -1,14 +1,22 @@
-# A2A Bridge — Multi-Agent MCP Server
+# A2A Bridge — Bidirectional Multi-Agent Communication
 
-An MCP server that bridges AI coding agents (Claude Code, Gemini CLI, OpenCode) to any [A2A (Agent-to-Agent)](https://a2a-protocol.org/) compliant agent, including Elastic Agent Builder.
+Two companion servers enabling full bidirectional A2A communication between AI coding agents:
+
+- **a2a-bridge** (MCP server) — Outbound: Claude Code/Gemini/OpenCode reach A2A agents
+- **a2a-server** (HTTP server) — Inbound: A2A agents reach Claude Code
 
 ## Architecture
 
 ```
+                    Outbound (MCP bridge)
 Claude Code ─┐
-Gemini CLI  ─┤─ MCP (stdio) ─► a2a-bridge ─► Elastic Agent Builder (Kibana A2A)
-OpenCode    ─┘    (Node.js)                 ─► Gemini CLI A2A Server
+Gemini CLI  ─┤─ MCP (stdio) ─► a2a-bridge ─► Elastic Agent Builder
+OpenCode    ─┘                              ─► Gemini CLI A2A Server
                                             ─► Any standard A2A agent
+
+                    Inbound (A2A server)
+Gemini CLI  ──A2A──► a2a-server (HTTP :3008) ──subprocess──► claude -p
+Other agents         /.well-known/agent-card.json
 ```
 
 ## Tools
@@ -54,12 +62,24 @@ ELASTIC_API_KEY=your-api-key
 
 ## Usage
 
+### Outbound (MCP bridge — `npm start`)
+
 ```
 > List the available A2A agents
 > Get the agent card for elastic/dev_assistant
 > Ask the elastic/dev_assistant agent to list the available indices
 > Send a message to gemini-local/default asking it to summarize this file
 ```
+
+### Inbound (A2A server — `npm run serve`)
+
+Start the A2A server to let other agents talk to Claude Code:
+
+```bash
+npm run serve
+```
+
+This exposes Claude Code at `http://localhost:3008` with a standard A2A agent card. Gemini CLI (or any A2A client) can discover and message it. See [Bidirectional Demo](examples/demo-bidirectional.md) for a full walkthrough.
 
 ## Configuration
 

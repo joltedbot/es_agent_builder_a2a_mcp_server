@@ -6,7 +6,8 @@
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
-    "start": "node dist/index.js"
+    "start": "node dist/index.js",
+    "serve": "node --env-file=.env dist/a2a-server.js"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.1",
