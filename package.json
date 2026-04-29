@@ -11,12 +11,12 @@
     "gemini-a2a": "CODER_AGENT_PORT=41965 node node_modules/@google/gemini-cli-a2a-server/dist/a2a-server.mjs"
   },
   "dependencies": {
-    "@google/gemini-cli-a2a-server": "^0.35.2",
-    "@modelcontextprotocol/sdk": "^1.12.1",
-    "zod": "^3.23.0"
+    "@google/gemini-cli-a2a-server": "^0.35.3",
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "zod": "^3.25.76"
   },
   "devDependencies": {
-    "@types/node": "^22.0.0",
-    "typescript": "^5.7.0"
+    "@types/node": "^22.19.17",
+    "typescript": "^6.0.3"
   }
 }
