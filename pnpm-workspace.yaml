@@ -4,6 +4,20 @@ allowBuilds:
   protobufjs: true
   tree-sitter-bash: true
 overrides:
+  '@opentelemetry/exporter-prometheus@<0.217.0': '>=0.217.0'
+  '@opentelemetry/sdk-node@<0.217.0': '>=0.217.0'
   '@tootallnate/once@<3.0.1': '>=3.0.1'
+  brace-expansion@>=5.0.0 <5.0.6: '>=5.0.6'
+  fast-uri@<=3.1.0: '>=3.1.1'
+  fast-uri@<=3.1.1: '>=3.1.2'
+  fast-xml-builder@<=1.1.6: '>=1.1.7'
+  fast-xml-builder@=1.1.5: '>=1.1.6'
+  hono@<4.12.16: '>=4.12.16'
+  hono@<4.12.18: '>=4.12.18'
+  ip-address@<=10.1.0: '>=10.1.1'
+  protobufjs@<=7.5.7: '>=7.5.8'
   protobufjs@>=8.0.0 <8.0.1: '>=8.0.1'
+  protobufjs@>=8.0.0 <8.2.0: '>=8.2.0'
+  systeminformation@>=4.17.0 <=5.31.5: '>=5.31.6'
   uuid@<14.0.0: '>=14.0.0'
+  ws@>=8.0.0 <8.20.1: '>=8.20.1'
