@@ -1,5 +1,6 @@
 .env
 .env.*
+.pnpm-store
 agents.json
 .gemini
 !.env.example
